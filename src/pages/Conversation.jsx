@@ -1,109 +1,132 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { ROUTES } from "@/config/routes";
 import socketClient from "@/socketClient";
 import {
-    useGetMessagesQuery,
-    useCreateMessageMutation,
-    conversationsApi,
+  useGetMessagesQuery,
+  useCreateMessageMutation,
+  conversationsApi,
 } from "@/store/api/conversationsApi";
+import { useGetUsersQuery } from "@/store/api/usersApi";
 import { getApiErrorMessage } from "@/utils/errors";
 
+import Sidebar from "@/components/chat/Sidebar";
+import ChatHeader from "@/components/chat/ChatHeader";
+import MessageList from "@/components/chat/MessageList";
+import MessageInput from "@/components/chat/MessageInput";
+
 function Conversation() {
-    const dispatch = useDispatch();
-    const [content, setContent] = useState("");
-    const [error, setError] = useState("");
-    const { id: conversationId } = useParams();
-    const { data: messages = [] } = useGetMessagesQuery(conversationId, {
-        skip: !conversationId,
+  const dispatch = useDispatch();
+  const { id: conversationId } = useParams();
+  const [error, setError] = useState("");
+
+  const { data: messages = [] } = useGetMessagesQuery(conversationId, {
+    skip: !conversationId,
+  });
+
+  const { data: users = [] } = useGetUsersQuery();
+  const [createMessage, { isLoading }] = useCreateMessageMutation();
+
+  const selectedUser = users.find(
+    (u) => String(u.id) === String(conversationId),
+  );
+  const { state } = useLocation();
+  const { selectedUserId } = state || {};
+
+  const initials = selectedUser?.email?.[0]?.toUpperCase() ?? "?";
+  const COLORS = [
+    "bg-blue-500",
+    "bg-indigo-500",
+    "bg-pink-500",
+    "bg-emerald-500",
+    "bg-amber-500",
+    "bg-red-500",
+  ];
+  const avatarColor = COLORS[(selectedUser?.id ?? 0) % COLORS.length];
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const channelName = `conversation-${conversationId}`;
+    const channel = socketClient.subscribe(channelName);
+
+    channel.bind("created", (message) => {
+      dispatch(
+        conversationsApi.util.updateQueryData(
+          "getMessages",
+          conversationId,
+          (draft) => {
+            if (draft && draft.messages) {
+              draft.messages.push(message);
+            }
+          },
+        ),
+      );
     });
-    const [createMessage, { isLoading }] = useCreateMessageMutation();
 
-    useEffect(() => {
-        if (!conversationId) return;
-        const channel = socketClient.subscribe(`conversation-${conversationId}`);
-        channel.bind("created", (message) => {
-            dispatch(
-                conversationsApi.util.updateQueryData(
-                    "getMessages",
-                    conversationId,
-                    (draft) => {
-                        draft.push(message);
-                    }
-                )
-            );
-        });
-        return () => channel.unsubscribe();
-    }, [conversationId, dispatch]);
+    channel.bind_global((eventName, data) => {
+      console.log("🔔 Event:", eventName, data);
+    });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const text = content;
-        setContent("");
-        setError("");
-        try {
-            await createMessage({
-                conversationId,
-                type: "text",
-                content: text,
-            }).unwrap();
-        } catch (err) {
-            setContent(text);
-            setError(getApiErrorMessage(err, "Không thể gửi tin nhắn. Vui lòng thử lại."));
-        }
+    return () => {
+      channel.unbind_all();
+      socketClient.unsubscribe(channelName);
     };
+  }, [conversationId, dispatch]);
 
-    return (
-        <div className="max-w-2xl mx-auto p-6 flex flex-col h-[calc(100vh-3.5rem)]">
-            <div className="mb-4">
-                <Link
-                    to={ROUTES.HOME}
-                    className="text-sm text-slate-600 hover:text-blue-600"
-                >
-                    ← Quay lại danh sách
-                </Link>
-            </div>
+  const handleSend = async (text) => {
+    setError("");
+    try {
+      await createMessage({
+        conversationId,
+        type: "text",
+        content: text,
+      }).unwrap();
+    } catch (err) {
+      setError(
+        getApiErrorMessage(err, "Không thể gửi tin nhắn. Vui lòng thử lại."),
+      );
+    }
+  };
 
-            <h1 className="text-2xl font-semibold text-slate-800 mb-4">
-                Tin nhắn
-            </h1>
+  return (
+    <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-100 overflow-hidden">
+      <Sidebar selectedUserId={selectedUserId} />
 
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-                {error && (
-                    <p className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded-lg">
-                        {error}
-                    </p>
-                )}
-                <ul className="flex-1 overflow-y-auto mb-4 space-y-2 pr-2">
-                    {messages.map((message) => (
-                        <li
-                            key={message.id}
-                            className="p-3 bg-white border border-slate-200 rounded-lg text-slate-800"
-                        >
-                            {message.content}
-                        </li>
-                    ))}
-                </ul>
-                <div className="flex gap-2 shrink-0">
-                    <textarea
-                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        rows={2}
-                        placeholder="Nhập tin nhắn..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium self-end"
-                    >
-                        {isLoading ? "..." : "Gửi"}
-                    </button>
-                </div>
-            </form>
-        </div>
-    );
+      <main className="flex-1 flex flex-col bg-white overflow-hidden relative shadow-[-4px_0_24px_-16px_rgba(0,0,0,0.1)] z-0">
+        <ChatHeader
+          initials={initials}
+          avatarColor={avatarColor}
+          userName={selectedUser?.email}
+        />
+
+        {error && (
+          <div className="absolute top-[76px] left-1/2 -translate-x-1/2 bg-red-50 text-red-600 px-4 py-2 rounded-lg border border-red-200 text-sm shadow-sm z-20 flex items-center gap-2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <MessageList
+          messages={messages?.messages}
+          initials={initials}
+          avatarColor={avatarColor}
+        />
+
+        <MessageInput onSend={handleSend} isLoading={isLoading} />
+      </main>
+    </div>
+  );
 }
 
 export default Conversation;

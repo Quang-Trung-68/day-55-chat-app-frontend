@@ -1,48 +1,43 @@
-import { Link, useLocation } from "react-router-dom";
-import { useGetUsersQuery } from "@/store/api/usersApi";
-import { newChatUrl } from "@/config/routes";
+import { useLocation } from "react-router-dom";
+import Sidebar from "@/components/chat/Sidebar";
 
 function Home() {
-    const { data: users = [], isLoading } = useGetUsersQuery();
-    const { state } = useLocation();
+  const { pathname } = useLocation();
 
-    return (
-        <div className="max-w-2xl mx-auto p-6">
-            {state?.message && (
-                <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-sm">
-                    {state.message}
-                </div>
-            )}
+  const selectedUserId = pathname.startsWith("/chat/")
+    ? pathname.split("/chat/")[1]
+    : null;
 
-            <h1 className="text-2xl font-semibold text-slate-800 mb-4">
-                Chọn người để chat
-            </h1>
+  return (
+    <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-50 overflow-hidden">
+      <Sidebar selectedUserId={selectedUserId} />
 
-            {isLoading ? (
-                <div className="flex items-center gap-2 text-slate-500">
-                    <span className="inline-block w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
-                    Đang tải...
-                </div>
-            ) : users.length === 0 ? (
-                <p className="text-slate-500 py-8">Chưa có người dùng nào.</p>
-            ) : (
-                <ul className="space-y-2">
-                    {users.map((user) => (
-                        <li key={user.id}>
-                            <Link
-                                to={newChatUrl(user.id)}
-                                className="block p-4 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                            >
-                                <span className="text-slate-800 font-medium">
-                                    {user.email}
-                                </span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            )}
+      {/* Main content - Placeholder for empty state */}
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 bg-white shadow-[-4px_0_24px_-16px_rgba(0,0,0,0.1)] z-0">
+        <div className="w-16 h-16 bg-slate-100 rounded-[20px] flex items-center justify-center -mt-10 shadow-sm">
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="text-slate-400"
+          >
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+          </svg>
         </div>
-    );
+        <div className="text-center">
+          <p className="text-[16px] text-slate-700 font-semibold mb-1">
+            Chọn một người dùng để bắt đầu
+          </p>
+          <p className="text-[14px] text-slate-500">
+            Tin nhắn của bạn sẽ hiển thị tại đây
+          </p>
+        </div>
+      </main>
+    </div>
+  );
 }
 
 export default Home;
