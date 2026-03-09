@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import socketClient from "@/socketClient";
 import {
   useGetMessagesQuery,
   useCreateMessageMutation,
-  conversationsApi,
 } from "@/store/api/conversationsApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
 import { getApiErrorMessage } from "@/utils/errors";
@@ -16,13 +14,8 @@ import MessageList from "@/components/chat/MessageList";
 import MessageInput from "@/components/chat/MessageInput";
 
 function Conversation() {
-  const dispatch = useDispatch();
   const { id: conversationId } = useParams();
   const [error, setError] = useState("");
-
-  const { data: messages = [] } = useGetMessagesQuery(conversationId, {
-    skip: !conversationId,
-  });
 
   const { data: users = [] } = useGetUsersQuery();
   const [createMessage, { isLoading }] = useCreateMessageMutation();
@@ -44,34 +37,25 @@ function Conversation() {
   ];
   const avatarColor = COLORS[(selectedUser?.id ?? 0) % COLORS.length];
 
+  // ── Socket: tin nhắn realtime ──────────────────────────────
   useEffect(() => {
     if (!conversationId) return;
+
     const channelName = `conversation-${conversationId}`;
     const channel = socketClient.subscribe(channelName);
 
     channel.bind("created", (message) => {
-      dispatch(
-        conversationsApi.util.updateQueryData(
-          "getMessages",
-          conversationId,
-          (draft) => {
-            if (draft && draft.messages) {
-              draft.messages.push(message);
-            }
-          },
-        ),
-      );
-    });
-
-    channel.bind_global((eventName, data) => {
-      console.log("🔔 Event:", eventName, data);
+      setAllMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
     });
 
     return () => {
       channel.unbind_all();
       socketClient.unsubscribe(channelName);
     };
-  }, [conversationId, dispatch]);
+  }, [conversationId]);
 
   const handleSend = async (text) => {
     setError("");
@@ -88,6 +72,85 @@ function Conversation() {
     }
   };
 
+  // ══════════════════════════════════════════════════════════════
+  // ██  INFINITY LOADING MESSAGES —— VIẾT LẠI TRIỆT ĐỂ  ██
+  // ══════════════════════════════════════════════════════════════
+
+  const [nextCursor, setNextCursor] = useState(null);
+  const [allMessages, setAllMessages] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // ── SYNC RESET khi conversationId đổi ──────────────────────
+  // React official pattern: "adjusting state during rendering"
+  // (https://react.dev/reference/react/useState#storing-information-from-previous-renders)
+  //
+  // Sử dụng pattern này thay vì useEffect([conversationId]) vì:
+  //  - useEffect chạy SAU render → 1 render cycle sử dụng state cũ
+  //  - Gây useGetMessagesQuery gọi với cursor CŨ + id MỚI → sai data
+  //  - Sync reset TRONG render body → state đúng ngay lập tức
+  const [prevConversationId, setPrevConversationId] = useState(conversationId);
+  if (prevConversationId !== conversationId) {
+    setPrevConversationId(conversationId);
+    setNextCursor(null);
+    setAllMessages([]);
+    setHasMore(false);
+    setIsInitialized(false);
+  }
+
+  // ── RTK Query ─────────────────────────────────────────────
+  // refetchOnMountOrArgChange: true → LUÔN fetch mới khi args thay đổi
+  // hoặc khi quay lại conversation cũ (không dùng cache cũ)
+  const { data: messagesResult, isFetching } = useGetMessagesQuery(
+    {
+      id: conversationId,
+      params: { before: nextCursor ?? undefined },
+    },
+    {
+      skip: !conversationId,
+      refetchOnMountOrArgChange: true,
+    },
+  );
+
+  // ── Xử lý kết quả: phân biệt initial load vs load more ──
+  useEffect(() => {
+    if (!messagesResult?.messages) return;
+
+    const { messages: newMsgs, pagination } = messagesResult;
+
+    if (!isInitialized || nextCursor === null) {
+      // Trang đầu tiên (tin mới nhất)
+      setAllMessages(newMsgs);
+      setIsInitialized(true);
+    } else {
+      // Trang cũ hơn → prepend, lọc trùng
+      setAllMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const unique = newMsgs.filter((m) => !existingIds.has(m.id));
+        return [...unique, ...prev];
+      });
+    }
+
+    setHasMore(pagination?.hasMore ?? false);
+  }, [messagesResult]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Derived state ─────────────────────────────────────────
+  // isLoadingMore chỉ true khi fetch trang cũ hơn (không phải lần đầu)
+  const isLoadingMore = isFetching && isInitialized;
+
+  // ── handleLoadMore với ref guard ──────────────────────────
+  // Dùng ref để tránh stale closure (isFetching có thể bị capture cũ)
+  const isFetchingRef = useRef(false);
+  isFetchingRef.current = isFetching; // Update mỗi render — luôn mới nhất
+
+  const handleLoadMore = useCallback(() => {
+    if (isFetchingRef.current) return;
+    if (!messagesResult?.pagination?.hasMore) return;
+    if (!messagesResult?.pagination?.nextCursor) return;
+    setNextCursor(messagesResult.pagination.nextCursor);
+  }, [messagesResult]);
+
+  // ──────────────────────── RENDER ──────────────────────────
   return (
     <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-100 overflow-hidden">
       <Sidebar selectedUserId={selectedUserId} />
@@ -118,9 +181,11 @@ function Conversation() {
         )}
 
         <MessageList
-          messages={messages?.messages}
-          initials={initials}
-          avatarColor={avatarColor}
+          key={conversationId}
+          messages={allMessages}
+          hasNextPage={hasMore}
+          loadingMore={isLoadingMore}
+          onLoadMore={handleLoadMore}
         />
 
         <MessageInput onSend={handleSend} isLoading={isLoading} />

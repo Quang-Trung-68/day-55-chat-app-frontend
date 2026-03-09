@@ -33,7 +33,6 @@ const ConversationItem = ({ conversationUser }) => {
   const { data: opponentConversationUser } = useGetUserQuery(
     opponentConversationUserId,
   );
-  console.log(opponentConversationUser);
 
   const isActive = activeId === conversationId.toString();
   const handleConversationClick = () => {

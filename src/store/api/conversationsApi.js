@@ -23,7 +23,10 @@ export const conversationsApi = apiSlice.injectEndpoints({
       transformResponse: (response) => response?.data ?? response ?? [],
     }),
     getMessages: builder.query({
-      query: (id) => `conversations/${id}/messages`,
+      query: ({ id, params }) => ({
+        url: `conversations/${id}/messages`,
+        params,
+      }),
       transformResponse: (response) => response?.data ?? response ?? [],
     }),
     getLatestMessage: builder.query({
