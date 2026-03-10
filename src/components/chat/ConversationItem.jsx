@@ -91,11 +91,11 @@ const ConversationItem = ({ conversationUser }) => {
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer rounded-xl transition-all duration-300 mx-2 mb-1 border-transparent border
+      className={`flex items-center gap-3 px-3 py-3 cursor-pointer rounded-2xl transition-all duration-300 mx-2 mb-1 border
         ${
           isActive
-            ? "bg-indigo-50/70 border-indigo-100 shadow-sm ring-1 ring-indigo-100"
-            : "hover:bg-slate-50 border-transparent hover:border-slate-100"
+            ? "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border-blue-100 shadow-sm"
+            : "border-transparent hover:bg-slate-50 hover:border-slate-100/50"
         }
       `}
       onClick={handleConversationClick}
@@ -106,11 +106,11 @@ const ConversationItem = ({ conversationUser }) => {
           <img
             src={avatar}
             alt={displayName}
-            className={`w-11 h-11 rounded-full object-cover border-2 transition-colors ${isActive ? "border-indigo-200" : "border-white"}`}
+            className={`w-12 h-12 rounded-full object-cover border-2 transition-colors ${isActive ? "border-blue-200 shadow-sm" : "border-transparent"}`}
           />
         ) : (
           <div
-            className={`w-11 h-11 rounded-full ${isActive ? "bg-indigo-600 shadow-md ring-2 ring-indigo-200" : "bg-indigo-400"} flex items-center justify-center text-white text-sm font-semibold transition-all`}
+            className={`w-12 h-12 rounded-full ${isActive ? "bg-gradient-to-br from-blue-600 to-indigo-600 shadow-md" : "bg-gradient-to-br from-slate-400 to-slate-500"} flex items-center justify-center text-white text-[15px] font-medium transition-all`}
           >
             {initials}
           </div>
@@ -126,14 +126,14 @@ const ConversationItem = ({ conversationUser }) => {
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <div className="flex justify-between items-center mb-0.5">
           <span
-            className={`truncate text-[14px] transition-colors ${showUnread ? "font-bold text-slate-900" : isActive ? "font-bold text-indigo-950" : "font-semibold text-slate-700"}`}
+            className={`truncate text-[15px] tracking-tight transition-colors ${showUnread ? "font-bold text-slate-900" : isActive ? "font-bold text-blue-950" : "font-semibold text-slate-700"}`}
           >
             {displayName}
           </span>
           {/* Timestamp được tính toán lại tự động do setTick chạy liên tục */}
           {displayMessage?.created_at && (
             <span
-              className={`text-[11px] flex-shrink-0 ml-2 transition-colors ${showUnread ? "text-blue-600 font-bold" : isActive ? "text-indigo-500 font-medium" : "text-slate-400"}`}
+              className={`text-[11.5px] flex-shrink-0 ml-2 transition-colors ${showUnread ? "text-blue-600 font-bold" : isActive ? "text-blue-500 font-medium" : "text-slate-400 font-medium"}`}
             >
               {timeAgo(displayMessage.created_at)}
             </span>

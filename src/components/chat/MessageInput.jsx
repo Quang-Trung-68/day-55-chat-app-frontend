@@ -103,7 +103,7 @@ function MessageInput({ onSend, isLoading, conversationId }) {
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 px-6 flex-shrink-0 z-10 sticky bottom-0">
+    <div className="bg-white/95 backdrop-blur-xl border-t border-slate-100 p-4 px-6 flex-shrink-0 z-10 sticky bottom-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
       <form
         onSubmit={handleSubmit}
         className="flex items-end gap-3 max-w-5xl mx-auto"
@@ -115,7 +115,7 @@ function MessageInput({ onSend, isLoading, conversationId }) {
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className="flex-1 px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl text-[14.5px] text-slate-900 resize-none outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all leading-relaxed shadow-sm"
+          className="flex-1 px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl text-[14.5px] text-slate-900 resize-none outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-all leading-relaxed shadow-sm hover:border-slate-300"
           style={{ maxHeight: "160px", overflowY: "auto" }}
         />
         <button

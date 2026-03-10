@@ -39,8 +39,12 @@ function VerifyEmail() {
     }, [token, verifyEmail, navigate]);
 
     return (
-        <div className="max-w-sm mx-auto p-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center">
+        <div className="min-h-[calc(100vh-56px)] flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-8 w-full max-w-md relative z-10 mx-auto text-center">
                 {status === "loading" && (
                     <div className="flex flex-col items-center gap-3">
                         <span className="inline-block w-8 h-8 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
@@ -55,7 +59,7 @@ function VerifyEmail() {
                         </p>
                         <Link
                             to={ROUTES.LOGIN}
-                            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                            className="inline-block px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all font-medium transform hover:-translate-y-0.5"
                         >
                             Đăng nhập
                         </Link>
@@ -67,7 +71,7 @@ function VerifyEmail() {
                         <p className="text-red-600 font-medium mb-4">{message}</p>
                         <Link
                             to={ROUTES.HOME}
-                            className="inline-block px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 font-medium"
+                            className="inline-block px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all font-medium transform hover:-translate-y-0.5"
                         >
                             Về trang chủ
                         </Link>

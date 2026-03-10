@@ -60,9 +60,18 @@ function Login() {
     };
 
     return (
-        <div className="max-w-sm mx-auto p-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h1 className="text-xl font-semibold text-slate-800 text-center mb-6">
+        <div className="min-h-[calc(100vh-56px)] flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-8 w-full max-w-md relative z-10 mx-auto">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                    </svg>
+                </div>
+                <h1 className="text-2xl font-bold text-slate-800 text-center mb-8 tracking-tight">
                     Đăng nhập
                 </h1>
 
@@ -83,7 +92,7 @@ function Login() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                             placeholder="email@example.com"
                         />
                     </div>
@@ -99,7 +108,7 @@ function Login() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all pr-10"
                             />
                             <button
                                 type="button"
@@ -152,7 +161,7 @@ function Login() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                        className="w-full py-3 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                     >
                         {isLoading ? "Đang xử lý..." : "Đăng nhập"}
                     </button>

@@ -189,7 +189,7 @@ function Conversation() {
 
   // ──────────────────────── RENDER ──────────────────────────
   return (
-    <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-100 overflow-hidden">
+    <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-50 overflow-hidden">
       <Sidebar />
 
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative shadow-[-4px_0_24px_-16px_rgba(0,0,0,0.1)] z-0">

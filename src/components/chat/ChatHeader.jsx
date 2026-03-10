@@ -3,10 +3,10 @@ import { ROUTES } from "@/config/routes";
 
 function ChatHeader({ initials, avatarColor, name,email }) {
   return (
-    <div className="bg-white border-b border-slate-200 px-6 h-[68px] flex items-center gap-4 flex-shrink-0 z-10 shadow-sm relative">
+    <div className="bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 h-[72px] flex items-center gap-4 flex-shrink-0 z-10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] relative">
       <Link
         to={ROUTES.HOME}
-        className="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0 shadow-sm hover:shadow active:scale-95"
+        className="w-10 h-10 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-all flex-shrink-0 shadow-sm hover:shadow active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
       >
         <svg
           width="18"
