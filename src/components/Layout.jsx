@@ -12,6 +12,7 @@ function Layout() {
   const handleLogout = () => {
     dispatch(clearUser());
     dispatch({ type: "store/reset" });
+    window.location.href = ROUTES.LOGIN;
   };
 
   return (

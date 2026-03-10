@@ -17,7 +17,14 @@ function App() {
             <AuthInit>
                 <Routes>
                     <Route element={<Layout />}>
-                        <Route index element={<Home />} />
+                        <Route
+                            index
+                            element={
+                                <PrivateRoute>
+                                    <Home />
+                                </PrivateRoute>
+                            }
+                        />
                         <Route path={ROUTES.LOGIN} element={<Login />} />
                         <Route path={ROUTES.REGISTER} element={<Register />} />
                         <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />

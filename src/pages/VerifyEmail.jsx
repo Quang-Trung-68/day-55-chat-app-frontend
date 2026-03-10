@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { getErrorMessageFromApiError } from "@/utils/errors";
 import { useVerifyEmailMutation } from "@/store/api/authApi";
 import { ROUTES } from "@/config/routes";
 
 function VerifyEmail() {
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const token = searchParams.get("token");
     const [verifyEmail] = useVerifyEmailMutation();
 
@@ -24,12 +25,18 @@ function VerifyEmail() {
             .then((result) => {
                 setStatus("success");
                 setMessage(typeof result === "string" ? result : result?.message || "Xác thực thành công.");
+                // Tự động điều hướng sau 3 giây
+                setTimeout(() => {
+                    navigate(ROUTES.LOGIN, { 
+                        state: { message: "Xác thực thành công! Vui lòng đăng nhập." } 
+                    });
+                }, 3000);
             })
             .catch((err) => {
                 setStatus("error");
                 setMessage(getErrorMessageFromApiError(err));
             });
-    }, [token, verifyEmail]);
+    }, [token, verifyEmail, navigate]);
 
     return (
         <div className="max-w-sm mx-auto p-6">

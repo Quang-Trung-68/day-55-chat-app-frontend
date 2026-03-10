@@ -1,16 +1,9 @@
-import { useLocation } from "react-router-dom";
 import Sidebar from "@/components/chat/Sidebar";
 
 function Home() {
-  const { pathname } = useLocation();
-
-  const selectedUserId = pathname.startsWith("/chat/")
-    ? pathname.split("/chat/")[1]
-    : null;
-
   return (
     <div className="flex h-[calc(100vh-56px)] font-sans bg-slate-50 overflow-hidden">
-      <Sidebar selectedUserId={selectedUserId} />
+      <Sidebar />
 
       {/* Main content - Placeholder for empty state */}
       <main className="flex-1 flex flex-col items-center justify-center gap-4 bg-white shadow-[-4px_0_24px_-16px_rgba(0,0,0,0.1)] z-0">
