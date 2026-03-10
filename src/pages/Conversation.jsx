@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import socketClient from "@/socketClient";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@/store/authSlice";
 import {
   useGetMessagesQuery,
   useCreateMessageMutation,
+  useGetConversationUserQuery,
+  useGetConversationQuery,
+  useGetConversationsQuery,
 } from "@/store/api/conversationsApi";
-import { useGetUsersQuery } from "@/store/api/usersApi";
+import { useGetUserQuery } from "@/store/api/usersApi";
 import { getApiErrorMessage } from "@/utils/errors";
 
 import Sidebar from "@/components/chat/Sidebar";
@@ -17,16 +22,44 @@ function Conversation() {
   const { id: conversationId } = useParams();
   const [error, setError] = useState("");
 
-  const { data: users = [] } = useGetUsersQuery();
   const [createMessage, { isLoading }] = useCreateMessageMutation();
 
-  const selectedUser = users.find(
-    (u) => String(u.id) === String(conversationId),
+  const currentUser = useSelector(selectCurrentUser);
+  
+  // Lấy thông tin conversation và những users trong conversation
+  const { data: conversation } = useGetConversationQuery(conversationId, { skip: !conversationId });
+  const { data: conversationUsers } = useGetConversationUserQuery(conversationId, { skip: !conversationId });
+  
+  const _conversationUser = conversationUsers?.find(
+    (cu) => cu?.user_id != currentUser?.id,
   );
+  const opponentConversationUserId = _conversationUser?.user_id;
+
+  const { data: opponentConversationUser } = useGetUserQuery(
+    opponentConversationUserId,
+    { skip: !opponentConversationUserId }
+  );
+
   const { state } = useLocation();
   const { selectedUserId } = state || {};
 
-  const initials = selectedUser?.email?.[0]?.toUpperCase() ?? "?";
+  let displayName, finalEmail, finalName;
+  if (conversation?.type === "dm") {
+    displayName = opponentConversationUser?.name || opponentConversationUser?.email;
+    finalEmail = opponentConversationUser?.email;
+    finalName = opponentConversationUser?.name;
+  } else {
+    displayName = conversation?.name;
+    finalName = conversation?.name;
+  }
+
+  // Get conversations out of cache to detect "isTyping"
+  const { data: conversations = [] } = useGetConversationsQuery();
+  const isTyping = conversations.find(
+    (c) => String(c.conversation_id) === String(conversationId)
+  )?.isTyping;
+
+  const initials = displayName?.slice(0, 2).toUpperCase() ?? "?";
   const COLORS = [
     "bg-blue-500",
     "bg-indigo-500",
@@ -35,7 +68,8 @@ function Conversation() {
     "bg-amber-500",
     "bg-red-500",
   ];
-  const avatarColor = COLORS[(selectedUser?.id ?? 0) % COLORS.length];
+  const limit = 10;
+  const avatarColor = COLORS[(opponentConversationUserId ?? 0) % COLORS.length];
 
   // ── Socket: tin nhắn realtime ──────────────────────────────
   useEffect(() => {
@@ -44,16 +78,19 @@ function Conversation() {
     const channelName = `conversation-${conversationId}`;
     const channel = socketClient.subscribe(channelName);
 
-    channel.bind("created", (message) => {
+    const handleNewMessage = (message) => {
       setAllMessages((prev) => {
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
-    });
+    };
+
+    channel.bind("created", handleNewMessage);
 
     return () => {
-      channel.unbind_all();
-      socketClient.unsubscribe(channelName);
+      channel.unbind("created", handleNewMessage);
+      // Không gọi unsubscribe/unbind_all ở đây vì Sidebar/ConversationList 
+      // có thể cũng đang subscribe vào channel này để cập nhật list bên ngoài.
     };
   }, [conversationId]);
 
@@ -104,7 +141,7 @@ function Conversation() {
   const { data: messagesResult, isFetching } = useGetMessagesQuery(
     {
       id: conversationId,
-      params: { before: nextCursor ?? undefined },
+      params: { before: nextCursor ?? undefined, limit: limit ?? undefined },
     },
     {
       skip: !conversationId,
@@ -159,7 +196,8 @@ function Conversation() {
         <ChatHeader
           initials={initials}
           avatarColor={avatarColor}
-          userName={selectedUser?.email}
+          name={finalName}
+          email={finalEmail}
         />
 
         {error && (
@@ -188,7 +226,20 @@ function Conversation() {
           onLoadMore={handleLoadMore}
         />
 
-        <MessageInput onSend={handleSend} isLoading={isLoading} />
+        <div className="relative w-full">
+          {isTyping && (
+            <div className="absolute bottom-2 left-6 bg-white border border-slate-200 shadow-sm rounded-lg px-3 py-1.5 flex items-center gap-1.5 z-10 text-[13px] font-medium text-slate-600 animate-in fade-in slide-in-from-bottom-2 origin-bottom-right">
+              {finalName} đang nhập
+              <div className="flex items-center gap-0.5 ml-0.5 mt-[2px]">
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce"></span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <MessageInput onSend={handleSend} isLoading={isLoading} conversationId={conversationId} />
       </main>
     </div>
   );

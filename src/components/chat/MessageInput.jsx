@@ -1,8 +1,48 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import socketClient from "@/socketClient";
+import _ from "lodash";
 
-function MessageInput({ onSend, isLoading }) {
+function MessageInput({ onSend, isLoading, conversationId }) {
   const [content, setContent] = useState("");
   const textareaRef = useRef(null);
+
+  // Khởi tạo channel
+  const channelRef = useRef(null);
+  useEffect(() => {
+    if (!conversationId) return;
+    channelRef.current = socketClient.subscribe(`conversation-${conversationId}`);
+  }, [conversationId]);
+
+  // Debounced push typing event (khi type, đợi một chút mới gởi event)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const emitTypingEvent = useCallback(
+    _.throttle(() => {
+      if (channelRef.current) {
+        // Gửi event qua websocket client (Pusher hỗ trợ client-events nếu bật)
+        channelRef.current.trigger("client-typing", {
+          conversation_id: conversationId,
+        });
+      }
+    }, 2000), // Chỉ bắn tối đa 1 event typing mỗi 2s
+    [conversationId]
+  );
+
+  // Lấy tin nhắn nháp và focus vào ô input khi vào conversation
+  useEffect(() => {
+    if (!conversationId) return;
+    
+    const draft = sessionStorage.getItem(`draft_${conversationId}`) || "";
+    setContent(draft);
+
+    if (textareaRef.current) {
+      const el = textareaRef.current;
+      el.focus();
+      setTimeout(() => {
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+      }, 0);
+    }
+  }, [conversationId]);
 
   const resize = (el) => {
     el.style.height = "auto";
@@ -10,25 +50,55 @@ function MessageInput({ onSend, isLoading }) {
   };
 
   const handleChange = (e) => {
-    setContent(e.target.value);
+    const val = e.target.value;
+    setContent(val);
+    if (conversationId) {
+      sessionStorage.setItem(`draft_${conversationId}`, val);
+    }
     resize(e.target);
+
+    // Kích hoạt event typing realtime
+    if (val.trim()) {
+      emitTypingEvent();
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isLoading) return;
+
     const text = content.trim();
     if (!text) return;
+    
     onSend(text);
+    
+    // Xóa text và draft
     setContent("");
+    if (conversationId) {
+      sessionStorage.removeItem(`draft_${conversationId}`);
+    }
+    
+    // Reset khung và focus lại
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+      textareaRef.current.focus();
     }
   };
+
+  // Tự động focus lại sau khi request gửi tin nhắn kết thúc (nhằm đảm bảo không trượt focus)
+  useEffect(() => {
+    if (!isLoading && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isLoading]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      // Ngăn chặn bấm Enter khi đang gửi
+      if (!isLoading) {
+        handleSubmit(e);
+      }
     }
   };
 

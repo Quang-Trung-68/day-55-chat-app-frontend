@@ -11,12 +11,12 @@ const client = new PusherJS("abc123", {
   enabledTransports: ["ws", "wss"],
 });
 
-client.connection.bind("connected", () => {
-  console.log("✅ Connected!", client.connection.socket_id);
-});
+// client.connection.bind("connected", () => {
+//   console.log("✅ Connected!", client.connection.socket_id);
+// });
 
-client.connection.bind("error", (err) => {
-  console.error("❌ Error:", err);
-});
+// client.connection.bind("error", (err) => {
+//   console.error("❌ Error:", err);
+// });
 
 export default client;

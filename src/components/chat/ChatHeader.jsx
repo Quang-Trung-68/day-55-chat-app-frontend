@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
 
-function ChatHeader({ initials, avatarColor, userName }) {
+function ChatHeader({ initials, avatarColor, name,email }) {
   return (
     <div className="bg-white border-b border-slate-200 px-6 h-[68px] flex items-center gap-4 flex-shrink-0 z-10 shadow-sm relative">
       <Link
@@ -24,9 +24,16 @@ function ChatHeader({ initials, avatarColor, userName }) {
       >
         {initials}
       </div>
-      <div className="flex-1 overflow-hidden">
-        <div className="text-[15px] font-semibold text-slate-900 truncate">
-          {userName ?? "User"}
+      <div className="flex-1 overflow-hidden flex flex-col justify-center">
+        <div className="flex items-center gap-2">
+          <div className="text-[15px] font-semibold text-slate-900 truncate">
+            {name || "Người dùng ẩn danh"}
+          </div>
+          {email && email !== name ? (
+            <div className="text-[13px] text-slate-500 font-normal truncate hidden sm:block">
+              ({email})
+            </div>
+          ) : null}
         </div>
         <div className="text-[12.5px] font-medium text-emerald-600 mt-0.5 flex items-center gap-1.5">
           <div className="w-[6px] h-[6px] rounded-full bg-emerald-500 animate-pulse" />

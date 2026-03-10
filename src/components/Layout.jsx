@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { clearUser } from "@/store/authSlice";
+import { clearUser, selectCurrentUser } from "@/store/authSlice";
 import { ROUTES } from "@/config/routes";
 
 function Layout() {
-  const { user } = useSelector((state) => state.auth);
+  const user = useSelector(selectCurrentUser);
+  console.log(user)
   const dispatch = useDispatch();
   const location = useLocation();
 
@@ -37,9 +38,16 @@ function Layout() {
                 >
                   Trang chủ
                 </Link>
-                <span className="text-sm text-slate-500 max-w-[140px] truncate">
-                  {user.email}
-                </span>
+                <div className="flex flex-col items-end justify-center ml-2 mr-1">
+                  <span className="text-[14px] font-semibold text-slate-800 max-w-[160px] md:max-w-[200px] truncate leading-tight">
+                    {user.name || "Người dùng"}
+                  </span>
+                  {user.email && user.email !== user.name && (
+                    <span className="text-[11px] text-slate-500 max-w-[160px] md:max-w-[200px] truncate leading-tight">
+                      {user.email}
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={handleLogout}

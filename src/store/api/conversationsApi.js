@@ -12,7 +12,12 @@ export const conversationsApi = apiSlice.injectEndpoints({
     }),
     getConversations: builder.query({
       query: () => ({ url: `conversations` }),
-      transformResponse: (response) => response?.data ?? response ?? [],
+      // Thêm latest_message: null vào mỗi conversation để có sẵn cho updateQueryData
+      transformResponse: (response) =>
+        (response?.data ?? response ?? []).map((c) => ({
+          ...c,
+          latest_message: null, // sẽ được điền bởi getLatestMessage hoặc socket
+        })),
     }),
     getConversationUser: builder.query({
       query: (id) => ({ url: `conversations/${id}/users` }),
@@ -32,6 +37,30 @@ export const conversationsApi = apiSlice.injectEndpoints({
     getLatestMessage: builder.query({
       query: (id) => `conversations/${id}/latest-message`,
       transformResponse: (response) => response?.data ?? response,
+      // Khi fetch thành công, cập nhật luôn vào cache getConversations
+      async onQueryStarted(conversationId, { dispatch, queryFulfilled }) {
+        try {
+          const { data: message } = await queryFulfilled;
+          if (!message) return;
+          dispatch(
+            conversationsApi.util.updateQueryData(
+              "getConversations",
+              undefined,
+              (draft) => {
+                const item = draft.find(
+                  (c) => c.conversation_id === conversationId ||
+                         String(c.conversation_id) === String(conversationId),
+                );
+                if (item && !item.latest_message) {
+                  item.latest_message = message;
+                }
+              },
+            ),
+          );
+        } catch {
+          // Ignore
+        }
+      },
     }),
     createMessage: builder.mutation({
       query: ({ conversationId, ...body }) => ({
