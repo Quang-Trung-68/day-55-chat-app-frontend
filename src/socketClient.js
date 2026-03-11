@@ -1,22 +1,12 @@
 import PusherJS from "pusher-js";
 
-PusherJS.logToConsole = true;
-
-const client = new PusherJS("abc123", {
-  cluster: "",
-  wsHost: "127.0.0.1",
-  wsPort: 6001,
-  forceTLS: false,
+const client = new PusherJS(import.meta.env.VITE_SOKETI_APP_KEY || "abc123", {
+  cluster: import.meta.env.VITE_SOKETI_CLUSTER || "",
+  wsHost: import.meta.env.VITE_SOKETI_WS_HOST || "127.0.0.1",
+  wsPort: parseInt(import.meta.env.VITE_SOKETI_WS_PORT) || 6001,
+  forceTLS: import.meta.env.VITE_SOKETI_FORCE_TLS === "true",
   disableStats: true,
   enabledTransports: ["ws", "wss"],
 });
-
-// client.connection.bind("connected", () => {
-//   console.log("✅ Connected!", client.connection.socket_id);
-// });
-
-// client.connection.bind("error", (err) => {
-//   console.error("❌ Error:", err);
-// });
 
 export default client;
